@@ -16,3 +16,371 @@ Remember, transitive dependencies you are trying to maintain is that to get from
 When to use 3NF:
 
 When you want to update data, we want to be able to do in just 1 place. We want to avoid updating the table in the Customers Detail table
+
+
+
+import psycopg2
+try: 
+    conn = psycopg2.connect("host=127.0.0.1 dbname=studentdb user=student password=student")
+except psycopg2.Error as e: 
+    print("Error: Could not make connection to the Postgres database")
+    print(e)
+try: 
+    cur = conn.cursor()
+except psycopg2.Error as e: 
+    print("Error: Could not get cursor to the Database")
+    print(e)
+conn.set_session(autocommit=True)
+
+# TO-DO: Add the CREATE Table Statement and INSERT statements to add the data in the table
+
+try: 
+    cur.execute("CREATE TABLE IF NOT EXISTS music_store(Transaction_Id int, Customer_Name text, Cashier_Name text, Year int, Albums_Purchased text ARRAY);")
+except psycopg2.Error as e: 
+    print("Error: Issue creating table")
+    print (e)
+    
+try: 
+    cur.execute("INSERT INTO music_store (Transaction_Id, Customer_Name, Cashier_Name, Year, Albums_Purchased) \
+                 VALUES (%s, %s, %s, %s, %s)", \
+                 (1,"Amanda","Sam",2000,['Rubber Soul','Let it Be']))
+except psycopg2.Error as e: 
+    print("Error: Inserting Rows")
+    print (e)
+    
+try: 
+    cur.execute("INSERT INTO music_store (Transaction_Id, Customer_Name, Cashier_Name, Year, Albums_Purchased) \
+                 VALUES (%s, %s, %s, %s, %s)", \
+                 (1,"Toby","Sam",2000,['my Generation']))
+except psycopg2.Error as e: 
+    print("Error: Inserting Rows")
+    print (e)
+    
+try: 
+    cur.execute("INSERT INTO music_store (Transaction_Id, Customer_Name, Cashier_Name, Year, Albums_Purchased) \
+                 VALUES (%s, %s, %s, %s, %s)", \
+                 (3,"Max","Bob",2018,['Meet the Beatles','Help!']))
+except psycopg2.Error as e: 
+    print("Error: Inserting Rows")
+    print (e)
+    
+    
+try: 
+    cur.execute("SELECT * FROM music_store;")
+except psycopg2.Error as e: 
+    print("Error: select *")
+    print (e)
+
+row = cur.fetchone()
+while row:
+   print(row)
+   row = cur.fetchone()
+   
+## TO-DO: Complete the CREATE table statements and INSERT statements
+
+try: 
+    cur.execute("CREATE TABLE IF NOT EXISTS music_store2 (Transaction_Id int, Customer_Name text, Cashier_Name text, Year int, Albums_Purchased text);")
+except psycopg2.Error as e: 
+    print("Error: Issue creating table")
+    print (e)
+    
+try: 
+    cur.execute("INSERT INTO music_store2 (Transaction_Id, Customer_Name, Cashier_Name, Year, Albums_Purchased) \
+                 VALUES (%s, %s, %s, %s, %s)", \
+                 (1,"Amanda","Sam",2000,'Rubber Soul'))
+except psycopg2.Error as e: 
+    print("Error: Inserting Rows")
+    print (e)
+
+try: 
+    cur.execute("INSERT INTO music_store2 (Transaction_Id, Customer_Name, Cashier_Name, Year, Albums_Purchased) \
+                 VALUES (%s, %s, %s, %s, %s)", \
+                 (1,"Amanda","Sam",2000,'Let it Be'))
+except psycopg2.Error as e: 
+    print("Error: Inserting Rows")
+    print (e)
+    
+try: 
+    cur.execute("INSERT INTO music_store2 (Transaction_Id, Customer_Name, Cashier_Name, Year, Albums_Purchased) \
+                 VALUES (%s, %s, %s, %s, %s)", \
+                 (2,"Toby","Sam",2000,'my Generation'))
+except psycopg2.Error as e: 
+    print("Error: Inserting Rows")
+    print (e)
+    
+try: 
+    cur.execute("INSERT INTO music_store2 (Transaction_Id, Customer_Name, Cashier_Name, Year, Albums_Purchased) \
+                 VALUES (%s, %s, %s, %s, %s)", \
+                 (3,"Max","Bob",2018,'Meet the Beatles'))
+except psycopg2.Error as e: 
+    print("Error: Inserting Rows")
+    print (e)
+    
+try: 
+    cur.execute("INSERT INTO music_store2 (Transaction_Id, Customer_Name, Cashier_Name, Year, Albums_Purchased) \
+                 VALUES (%s, %s, %s, %s, %s)", \
+                 (3,"Max","Bob",2018,'Help!'))
+except psycopg2.Error as e: 
+    print("Error: Inserting Rows")
+    print (e)
+    
+try: 
+    cur.execute("SELECT * FROM music_store2;")
+except psycopg2.Error as e: 
+    print("Error: select *")
+    print (e)
+
+row = cur.fetchone()
+while row:
+   print(row)
+   row = cur.fetchone()
+
+try: 
+    cur.execute("CREATE TABLE IF NOT EXISTS transactions (Transaction_Id int, Customer_Name text, Cashier_Name text, Year int);")
+except psycopg2.Error as e: 
+    print("Error: Issue creating table")
+    print (e)
+
+try: 
+    cur.execute("CREATE TABLE IF NOT EXISTS albums_sold (Song_Id int, Transaction_Id int,Albums_Purchased text);")
+except psycopg2.Error as e: 
+    print("Error: Issue creating table")
+    print (e)
+    
+try: 
+    cur.execute("INSERT INTO transactions (Transaction_Id, Customer_Name, Cashier_Name, Year) \
+                 VALUES (%s, %s, %s, %s)", \
+                 (1,"Amanda","Sam",2000))
+except psycopg2.Error as e: 
+    print("Error: Inserting Rows")
+    print (e)
+
+try: 
+    cur.execute("INSERT INTO transactions (Transaction_Id, Customer_Name, Cashier_Name, Year) \
+                 VALUES (%s, %s, %s, %s)", \
+                 (2,"Toby","Sam",2000))
+except psycopg2.Error as e: 
+    print("Error: Inserting Rows")
+    print (e)
+    
+try: 
+    cur.execute("INSERT INTO transactions (Transaction_Id, Customer_Name, Cashier_Name, Year) \
+                 VALUES (%s, %s, %s, %s)", \
+                 (3,"Max","Bob",2018))
+except psycopg2.Error as e: 
+    print("Error: Inserting Rows")
+    print (e)
+    
+try: 
+    cur.execute("INSERT INTO albums_sold (Song_Id, Transaction_Id,Albums_Purchased) \
+                 VALUES (%s, %s, %s)", \
+                 (1,1,'Rubber Soul'))
+except psycopg2.Error as e: 
+    print("Error: Inserting Rows")
+    print (e)
+
+try: 
+    cur.execute("INSERT INTO albums_sold (Song_Id, Transaction_Id,Albums_Purchased) \
+                 VALUES (%s, %s, %s)", \
+                 (2,1,'Let it Be'))
+except psycopg2.Error as e: 
+    print("Error: Inserting Rows")
+    print (e)
+    
+try: 
+    cur.execute("INSERT INTO albums_sold (Song_Id, Transaction_Id,Albums_Purchased) \
+                 VALUES (%s, %s, %s)", \
+                 (3,2,'my Generation'))
+except psycopg2.Error as e: 
+    print("Error: Inserting Rows")
+    print (e)
+    
+try: 
+    cur.execute("INSERT INTO albums_sold (Song_Id, Transaction_Id,Albums_Purchased) \
+                 VALUES (%s, %s, %s)", \
+                 (4,3,'Meet the Beatles'))
+except psycopg2.Error as e: 
+    print("Error: Inserting Rows")
+    print (e)
+
+try: 
+    cur.execute("INSERT INTO albums_sold (Song_Id, Transaction_Id,Albums_Purchased) \
+                 VALUES (%s, %s, %s)", \
+                 (5,3,'Help!'))
+except psycopg2.Error as e: 
+    print("Error: Inserting Rows")
+    print (e)
+
+print("Table: transactions\n")
+try: 
+    cur.execute("SELECT * FROM transactions;")
+except psycopg2.Error as e: 
+    print("Error: select *")
+    print (e)
+
+row = cur.fetchone()
+while row:
+   print(row)
+   row = cur.fetchone()
+
+print("\nTable: albums_sold\n")
+try: 
+    cur.execute("SELECT * FROM albums_sold;")
+except psycopg2.Error as e: 
+    print("Error: select *")
+    print (e)
+row = cur.fetchone()
+while row:
+   print(row)
+   row = cur.fetchone()
+   
+   
+## TO-DO: Complete the join on the transactions and album_sold tables
+
+try: 
+    cur.execute("SELECT * FROM transactions JOIN albums_sold  ON transactions.Transaction_Id = albums_sold.Transaction_Id;")
+except psycopg2.Error as e: 
+    print("Error: select *")
+    print (e)
+
+row = cur.fetchone()
+while row:
+   print(row)
+   row = cur.fetchone()
+
+
+try: 
+    cur.execute("CREATE TABLE IF NOT EXISTS transactions2 (Transaction_Id int, Customer_Name text,Employee_ID int,Year int);")
+except psycopg2.Error as e: 
+    print("Error: Issue creating table")
+    print (e)
+
+try: 
+    cur.execute("CREATE TABLE IF NOT EXISTS employees (Employee_ID int, Cashier_Name text);")
+except psycopg2.Error as e: 
+    print("Error: Issue creating table")
+    print (e)
+
+try: 
+    cur.execute("INSERT INTO transactions2 (Transaction_Id, Customer_Name,Employee_ID,Year) \
+                 VALUES (%s, %s, %s, %s)", \
+                 (1, 'Amanda',1,2000))
+except psycopg2.Error as e: 
+    print("Error: Inserting Rows")
+    print (e)
+
+try: 
+    cur.execute("INSERT INTO transactions2 (Transaction_Id, Customer_Name,Employee_ID,Year) \
+                 VALUES (%s, %s, %s, %s)", \
+                 (2, 'Toby', 1,2000))
+except psycopg2.Error as e: 
+    print("Error: Inserting Rows")
+    print (e)
+    
+try: 
+    cur.execute("INSERT INTO transactions2 (Transaction_Id, Customer_Name,Employee_ID,Year) \
+                 VALUES (%s, %s, %s, %s)", \
+                 (3, 'Max',2,2018))
+except psycopg2.Error as e: 
+    print("Error: Inserting Rows")
+    print (e)
+
+try: 
+    cur.execute("INSERT INTO employees (Employee_ID, Cashier_Name) \
+                 VALUES (%s, %s)", \
+                 (1,'Sam'))
+except psycopg2.Error as e: 
+    print("Error: Inserting Rows")
+    print (e)
+
+try: 
+    cur.execute("INSERT INTO employees (Employee_ID, Cashier_Name) \
+                 VALUES (%s, %s)", \
+                 (2,'Bob'))
+except psycopg2.Error as e: 
+    print("Error: Inserting Rows")
+    print (e)    
+
+print("Table: transactions2\n")
+try: 
+    cur.execute("SELECT * FROM transactions2;")
+except psycopg2.Error as e: 
+    print("Error: select *")
+    print (e)
+
+row = cur.fetchone()
+while row:
+   print(row)
+   row = cur.fetchone()
+
+print("\nTable: albums_sold\n")
+try: 
+    cur.execute("SELECT * FROM albums_sold;")
+except psycopg2.Error as e: 
+    print("Error: select *")
+    print (e)
+
+row = cur.fetchone()
+while row:
+   print(row)
+   row = cur.fetchone()
+
+print("\nTable: employees\n")
+try: 
+    cur.execute("SELECT * FROM employees;")
+except psycopg2.Error as e: 
+    print("Error: select *")
+    print (e)
+
+row = cur.fetchone()
+while row:
+   print(row)
+   row = cur.fetchone()
+   
+try: 
+    cur.execute("SELECT * FROM (transactions2 JOIN albums_sold ON \
+                               transactions2.Transaction_Id = albums_sold.Transaction_Id \
+                               JOIN employees ON transactions2.Employee_ID = employees.Employee_ID)")
+except psycopg2.Error as e: 
+    print("Error: select *")
+    print (e)
+
+row = cur.fetchone()
+while row:
+   print(row)
+   row = cur.fetchone()
+   
+   
+try: 
+    cur.execute("DROP table music_store")
+except psycopg2.Error as e: 
+    print("Error: Dropping table")
+    print (e)
+try: 
+    cur.execute("DROP table music_store2")
+except psycopg2.Error as e: 
+    print("Error: Dropping table")
+    print (e)
+try: 
+    cur.execute("DROP table albums_sold")
+except psycopg2.Error as e: 
+    print("Error: Dropping table")
+    print (e)
+try: 
+    cur.execute("DROP table employees")
+except psycopg2.Error as e: 
+    print("Error: Dropping table")
+    print (e)
+try: 
+    cur.execute("DROP table transactions")
+except psycopg2.Error as e: 
+    print("Error: Dropping table")
+    print (e)
+try: 
+    cur.execute("DROP table transactions2")
+except psycopg2.Error as e: 
+    print("Error: Dropping table")
+    print (e)
+    
+cur.close()
+conn.close()
