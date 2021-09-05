@@ -110,3 +110,5 @@ so we are making it fast for read purposes. Data is spread across all the nodes.
 By using the WHERE statement, we know which node to go to, from which node to get that data and serve it back. 
 For example, imagine we have 10 years of data on 10 nodes or servers. 
 So 1 year's data is on a separate node. By using the WHERE year = 1 statement we know which node to visit fast to pull the data from.
+
+!!!You can not try to access a column or a clustering column if you have not used the other defined clustering column !!!
