@@ -1,0 +1,2 @@
+GROUP BY CUBE (dim1, dim2) can group all the combination of dim1,dim2, which equals with
+GROUP BY grouping sets((),dim1,dim2,(dim1,dim2))
