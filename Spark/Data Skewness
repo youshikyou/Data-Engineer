@@ -1,0 +1,30 @@
+Skewed data means due to non-optimal partitioning, the data is heavy on few partitions. 
+This could be problematic. Imagine you’re processing this dataset, and the data is distributed through your cluster by partition. 
+In this case, only a few partitions will continue to work, while the rest of the partitions do not work.
+
+Check for MIN, MAX and data RANGES
+Examine how the workers are working
+Identify workers that are running longer and aim to optimize it.
+
+What are some ways to solve skewness?
+	Data preprocess
+	Broadcast joins
+	Salting
+	
+So how do we solve skewed data problems?
+	The goal is to change the partitioning columns to take out the data skewness (e.g., the year column is skewed).
+
+	1. Use Alternate Columns that are more normally distributed:
+	E.g., Instead of the year column, we can use Issue_Date column that isn’t skewed.
+
+	2. Make Composite Keys:(recommended)
+	For e.g., you can make composite keys by combining two columns so that the new column can be used as a composite key. 
+	For e.g, combining the Issue_Date and State columns to make a new composite key titled Issue_Date + State. 
+	The new column will now include data from 2 columns, e.g., 2017-04-15-NY. 
+	This column can be used to partition the data, create more normally distributed datasets 
+	(e.g., distribution of parking violations on 2017-04-15 would now be more spread out across states, and this can now help address skewness in the data.
+
+	3. Partition by number of Spark workers:(recommended)
+	Another easy way is using the Spark workers. If you know the number of your workers for Spark, 
+	then you can easily partition the data by the number of workers df.repartition(number_of_workers) to repartition your data evenly across your workers. 
+	For example, if you have 8 workers, then you should do df.repartition(8) before doing any operations.
