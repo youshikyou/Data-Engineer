@@ -1,0 +1,103 @@
+################### using the existing table and its schema to create a table ###################
+create or replace TABLE covid_352.oxford_policy_tracker_482
+PARTITION BY date
+OPTIONS (
+   partition_expiration_days=180
+) AS
+SELECT
+* 
+FROM
+`bigquery-public-data.covid19_govt_response.oxford_policy_tracker`
+where alpha_3_code not in ('GBR','BRA','CAN','USA')
+
+###################  change the table schema ###################
+you can use shell, console,sql to edit the schema(add new columns(struct,array))
+https://cloud.google.com/bigquery/docs/managing-table-schemas#console
+
+################### use one table's column data to populate in another table's column ###################
+UPDATE
+    table_A t0
+SET
+    t0.column_b = t2.column_b
+FROM
+    (SELECT DISTINCT column_a, column_b FROM 
+    `bigquery-public-data.covid19_ecdc.covid_19_geographic_distribution_worldwide`) 
+AS t2
+WHERE t0.column_a = t2.coloum_a;
+
+
+
+################### populate the array or struct column ###################
+UPDATE
+    covid_352.oxford_policy_tracker_482 t0
+SET
+    t0.mobility.avg_retail = t2.avg_retail,
+    t0.mobility.avg_grocery = t2.avg_grocery,
+    t0.mobility.avg_parks = t2.avg_parks,
+    t0.mobility.avg_transit = t2.avg_transit,
+    t0.mobility.avg_workplace = t2.avg_workplace,
+    t0.mobility.avg_residential = t2.avg_residential
+FROM
+    ( SELECT country_region, date,
+      AVG(retail_and_recreation_percent_change_from_baseline) as avg_retail,
+      AVG(grocery_and_pharmacy_percent_change_from_baseline)  as avg_grocery,
+      AVG(parks_percent_change_from_baseline) as avg_parks,
+      AVG(transit_stations_percent_change_from_baseline) as avg_transit,
+      AVG( workplaces_percent_change_from_baseline ) as avg_workplace,
+      AVG( residential_percent_change_from_baseline)  as avg_residential
+      FROM `bigquery-public-data.covid19_google_mobility.mobility_report`
+      GROUP BY country_region, date) 
+AS t2
+WHERE t0.country_name = t2.country_region and t0.date=t2.date
+
+################### union table ###################
+Run a query to find the missing countries in the population and country_area data.
+The query should list countries that do not have any population data and countries 
+that do not have country area information, ordered by country name. 
+If a country has neither population or country area it must appear twice.
+
+
+select distinct country_name,population,country_area
+from `qwiklabs-gcp-04-91fa8504aa09.covid_352.oxford_policy_tracker_482`
+where population is null or country_area is null
+union all 
+select distinct country_name,population,country_area
+from `qwiklabs-gcp-04-91fa8504aa09.covid_352.oxford_policy_tracker_482`
+where population is null and country_area is null
+order by country_name
+
+
+
+################### clean and replace table with limited rows ###############
+
+create or replace table `projectid.dataset.table`
+as
+with w as (
+    select avg(pickup_longitude) as avg_pklog,
+    stddev(pickup_longitude) as std_pklog,
+    avg(pickup_latitude) as avg_pklat,
+    stddev(pickup_latitude) as std_pklat,
+    avg(dropoff_longitude) as avg_drplog,
+    stddev(dropoff_longitude) as std_drplog,
+    avg(dropoff_latitude) as avg_drplat,
+    stddev(dropoff_latitude) as std_drplat,
+    from `qwiklabs-gcp-01-966527371ead.taxirides.historical_taxi_rides_raw`
+)
+select pickup_datetime,pickup_longitude,pickup_latitude,
+dropoff_longitude,dropoff_latitude,passenger_count,(fare_amount+tolls_amount) as fare_amount_532
+from `qwiklabs-gcp-01-966527371ead.taxirides.historical_taxi_rides_raw`,w
+where 
+pickup_datetime is not null and 
+pickup_longitude between avg_pklog- std_pklog and avg_pklog + std_pklog and 
+pickup_latitude between avg_pklat - std_pklat and avg_pklat + std_pklat and 
+dropoff_longitude between avg_drplog-std_drplog and avg_drplog+std_drplog and
+dropoff_latitude between avg_drplat-std_drplat and avg_drplat+std_drplat and
+passenger_count>2 and
+trip_distance>1 and
+fare_amount>=2
+limit 1000000
+
+#################### table sampling ####################
+
+SELECT * FROM dataset.my_table TABLESAMPLE SYSTEM (10 PERCENT)
+
