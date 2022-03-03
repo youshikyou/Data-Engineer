@@ -1,0 +1,47 @@
+create or replace model `projectid`.dataset.model
+TRANSFORM(
+    ST_Distance(ST_GeogPoint(pickup_longitude, pickup_latitude), ST_GeogPoint(dropoff_longitude, dropoff_latitude)) AS euclidean,
+    pickup_datetime,
+    passenger_count,
+    fare_amount_288
+)
+OPTIONS(input_label_cols=['fare_amount_288'], model_type='linear_reg', l2_reg=0.1, optimize_strategy='BATCH_GRADIENT_DESCENT') 
+AS
+select * from `projectid`.dataset.table_A
+
+Only columns in transform will be in the training.
+
+###############################################
+
+SELECT
+  *
+FROM
+  ML.EVALUATE(MODEL `projectid`.dataset.model)
+
+This will return a row with different parameters.
+
+###############################################
+create a table with the predicted value by using table_c's data
+
+
+create or replace table `projectid`.dataset.table_b
+as
+SELECT
+  *
+FROM
+  ML.PREDICT(MODEL `projectid`.dataset.model,
+    (
+    SELECT
+        pickup_datetime	as 	pickup_datetime, 
+        pickuplon as pickup_longitude,
+        pickuplat as pickup_latitude,
+        dropofflon as 	dropoff_longitude,
+        dropofflat as	dropoff_latitude,
+        passengers as passenger_count
+    FROM
+      `projectid`.dataset.table_C
+     )
+ )
+############################################### 
+
+
