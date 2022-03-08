@@ -5,3 +5,15 @@ deduplicating elements with ARRAY_AGG(DISTINCT <field>)
 ordering elements with ARRAY_AGG(<field> ORDER BY <field>)
 
 limiting ARRAY_AGG(<field> LIMIT 5)
+
+%%bigquery
+-- LIMIT 0 is a free query; this allows us to check that the table exists.
+SELECT * FROM table
+LIMIT 0
+
+%%create hash%%%%%%%
+FARM_FINGERPRINT(
+    CONCAT(
+        CAST(year AS STRING),
+        CAST(month AS STRING)
+    )
