@@ -1,0 +1,28 @@
+
+Use BigQuery Python API to export our train and eval tables to Google Cloud Storage in the CSV format to be used later for TensorFlow/Keras training. We'll want to use the dataset we've been using above as well as repeat the process for both training and evaluation data.
+
+# Construct a BigQuery client object.
+client = bigquery.Client()
+​
+dataset_name = "babyweight"
+​
+# Create dataset reference object
+dataset_ref = client.dataset(
+    dataset_id=dataset_name, project=client.project)
+​
+# Export both train and eval tables
+for step in ["train", "eval"]:
+    destination_uri = os.path.join(
+        "gs://", BUCKET, dataset_name, "data", "{}*.csv".format(step))
+    table_name = "babyweight_data_{}".format(step)
+    table_ref = dataset_ref.table(table_name)
+    extract_job = client.extract_table(
+        table_ref,
+        destination_uri,
+        # Location must match that of the source table.
+        location="US",
+    )  # API request
+    extract_job.result()  # Waits for job to complete.
+​
+    print("Exported {}:{}.{} to {}".format(
+        client.project, dataset_name, table_name, destination_uri))
