@@ -17,3 +17,9 @@ FARM_FINGERPRINT(
         CAST(year AS STRING),
         CAST(month AS STRING)
     )
+    
+%%%%rand() %%%%%
+create a sampling
+
+%%%%find the extreme%%%%%
+APPROX_QUANTILES(col,n)
