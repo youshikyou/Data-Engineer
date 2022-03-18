@@ -1,1 +1,2 @@
-Some notes
+Data pipeline
+Architecture
