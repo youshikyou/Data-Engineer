@@ -1,0 +1,18 @@
+#standardSQL
+   SELECT
+   protopayload_auditlog.authenticationInfo.principalEmail as principalEmail,
+   JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,"$.jobChange.job.jobConfig.queryConfig.query") as query,
+   ROUND(sum(CAST(JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,
+         "$.jobChange.job.jobStats.queryStats.totalBilledBytes") AS INT64)) * 5.514341886E-12, 2) as USDCost,
+   ROUND(avg(CAST(JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,
+       "$.jobChange.job.jobStats.queryStats.totalBilledBytes") AS INT64)) * 5.514341886E-12,2) as avg_UDSCost,
+   ROUND(avg(CAST(JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,
+       "$.jobChange.job.jobStats.queryStats.totalBilledBytes") AS INT64)) * 1e-12, 2) as processed_TBytes_perquery,
+   count(*) as query_count,
+FROM
+   `table`
+where JSON_EXTRACT_SCALAR(protopayload_auditlog.metadataJson,"$.jobChange.job.jobConfig.queryConfig.query") is not null
+#and timestamp BETWEEN TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY) AND CURRENT_TIMESTAMP()
+and extract(date from timestamp) between '2022-3-01' and '2022-3-31'
+group by 1,2
+order by 3 desc
