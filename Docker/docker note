@@ -1,0 +1,8 @@
+#interactive way in running container
+docker container run --it 
+#to quit gracefully without kill the terminal
+ctrl+P+Q
+
+
+#detached and run in the background
+docker contrain run -d
