@@ -1,6 +1,6 @@
 #interactive way in running container
 docker container run --it 
-#to quit gracefully without kill the terminal
+#to quit gracefully without kill the terminal instead of using   exit
 ctrl+P+Q
 
 
