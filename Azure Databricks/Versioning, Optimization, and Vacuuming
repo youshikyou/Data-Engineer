@@ -1,0 +1,23 @@
+describe history sample
+
+describe details sample
+
+SELECT * FROM sample VERSION AS OF 1
+SELECT * FROM sample TIMESTAMP AS OF '2018-10-18T22:15:12.013Z'
+SELECT * FROM sample@v1
+SELECT * FROM sample@20190101000000000
+
+CREATE OR REPLACE TEMP VIEW pre_delete_vw AS
+select * from sample version as of 4
+
+restore table sample to version as of 5
+
+optimize sample
+zorder by onefield
+
+SET spark.databricks.delta.retentionDurationCheck.enabled = true/false;
+SET spark.databricks.delta.vacuum.logging.enabled = true;
+
+VACUUM sample RETAIN 0 HOURS DRY RUN
+VACUUM sample RETAIN 0 HOURS
+
