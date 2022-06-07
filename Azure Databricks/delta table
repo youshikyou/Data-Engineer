@@ -1,0 +1,23 @@
+create table sample
+(name string, id int, gender string,educated boolean)
+
+insert into sample values
+("nidie",1,"male",true)
+
+update sample
+set name = "wocuole"
+where id = 1
+
+delete from sample
+where id = 1
+
+CREATE OR REPLACE TEMP VIEW new_sample(name, id, gender, educated) AS VALUES
+("hao",1,"male",true);
+
+merge into sample
+using new_sample
+on sample.id = new_sample.id
+when matched then update set gender = new_sample.gender
+when not matched then insert * 
+
+drop table sample
