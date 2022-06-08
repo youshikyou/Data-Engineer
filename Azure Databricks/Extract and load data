@@ -36,4 +36,9 @@ DEEP CLONE purchases
 CREATE OR REPLACE TABLE purchases_shallow_clone
 SHALLOW CLONE purchases
 
+***********Load Incrementally***********
+COPY INTO sales
+FROM "${da.paths.datasets}/raw/sales-30m"
+FILEFORMAT = PARQUET
+
 
