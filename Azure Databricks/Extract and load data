@@ -11,3 +11,29 @@ select * from events_json
 ***********Create Delta Table from a Query***********
 create or replace table item_lookup
 as select * from parquet.`${da.paths.datasets}/raw/item-lookup`
+
+
+***********Add a Table Constraint***********
+ALTER TABLE purchase_dates ADD CONSTRAINT valid_date CHECK (date > '2020-01-01');
+
+
+***********Enrich Tables with Additional Options and Metadata***********
+CREATE OR REPLACE TABLE users_pii
+COMMENT "Contains PII"
+LOCATION "${da.paths.working_dir}/tmp/users_pii"
+PARTITIONED BY (first_touch_date)
+AS
+  SELECT *, 
+    cast(cast(user_first_touch_timestamp/1e6 AS TIMESTAMP) AS DATE) first_touch_date, 
+    current_timestamp() updated,
+    input_file_name() source_file
+  FROM parquet.`${da.paths.datasets}/raw/users-historical/`;
+  
+***********Cloning Delta Lake Tables***********
+CREATE OR REPLACE TABLE purchases_clone
+DEEP CLONE purchases
+
+CREATE OR REPLACE TABLE purchases_shallow_clone
+SHALLOW CLONE purchases
+
+
