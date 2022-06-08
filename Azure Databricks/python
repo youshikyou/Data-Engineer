@@ -1,0 +1,6 @@
+spark.sql("select 1 from table")
+
+display(spark.sql("select 1 from table"))
+
+F-strings
+By adding the letter f before a Python string, you can inject variables or evaluated Python code by inserted them inside curly braces ({}).
