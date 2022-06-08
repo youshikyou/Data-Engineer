@@ -1,0 +1,38 @@
+
+********We want to aggregate the number of times each user performed a specific event, 
+********specified in the event_name column. To do this, group by user and pivot on event_name to provide a count of every event type in its own column
+CREATE OR REPLACE VIEW events_pivot
+as select * from (
+select user_id as user, event_name 
+from events)
+pivot (
+count(*) for event_name in
+    ("cart", "pillows", "login", "main", "careers", "guest", "faq", "down", "warranty", "finalize", 
+    "register", "shipping_info", "checkout", "mattresses", "add_item", "press", "email_coupon", 
+    "cc_info", "foam", "reviews", "original", "delivery", "premium")
+  )
+  
+************** join table
+CREATE OR REPLACE VIEW clickpaths AS
+select * from events_pivot e 
+join transactions t on e.user = t.user_id
+
+************** exists higher order function
+CREATE OR REPLACE TABLE sales_product_flags AS
+select
+items,
+EXISTS (items,i->i.item_name LIKE "%Mattress") as mattress,
+EXISTS (items,i->i.item_name LIKE "%Pillow") as pillow
+from sales
+
+************** transform higher order function
+CREATE OR REPLACE TEMP VIEW king_item_revenues AS
+SELECT
+  order_id,
+  king_items,
+  TRANSFORM (
+    king_items,
+    k -> CAST(k.item_revenue_in_usd * 100 AS INT)
+  ) AS item_revenues
+FROM king_size_sales;
+
