@@ -1,0 +1,74 @@
+********************create a database********************
+create database if not exists ${da.db_name}
+
+********************change to a new database********************
+use ${da.db_name}
+
+********************create a manage table********************
+create table weather_managed as
+SELECT * 
+FROM parquet.`${da.paths.working_dir}/weather`
+
+********************create an external table********************
+create table weather_external
+LOCATION "${da.paths.working_dir}/lab/external"
+AS SELECT * 
+FROM parquet.`${da.paths.working_dir}/weather`
+
+********************examine table details********************
+DESCRIBE EXTENDED weather_managed
+
+********************table path********************
+%python
+spark.sql(f"DESCRIBE DETAIL {tableName}").select("location").first()[0]
+
+********************list all the files in the path********************
+%python
+files = dbutils.fs.ls(managedTablePath)
+display(files)
+
+
+********************delete the database********************
+drop database ${da.db_name} cascade
+
+The main differences between managed and external tables. 
+By default, the files associated with managed tables will be stored to this location on the root DBFS storage linked to the workspace, 
+and will be deleted when a table is dropped.
+Files for external tables will be persisted in the location provided at table creation, 
+preventing users from inadvertently deleting underlying files. 
+External tables can easily be migrated to other databases or renamed, but these operations with managed tables will require rewriting ALL underlying files.
+
+********************Create a Database with a Specified Path********************
+CREATE DATABASE ${da.db_name} LOCATION '${da.paths.working_dir}/${da.db_name}';
+USE ${da.db_name};
+
+
+
+********************view scope********************
+The view is associated with the current database. This view will be available to any user that can access this database and will persist between sessions.
+The temp view is not associated with any database. The temp view is ephemeral and is only accessible in the current SparkSession.
+The global temp view does not appear in our catalog. Global temp views will always register to the global_temp database.
+The global_temp database is ephemeral but tied to the lifetime of the cluster; 
+however, it is only accessible by notebooks attached to the same cluster on which it was created.
+
+create or replace view celsius
+AS (SELECT *
+  FROM weather_managed
+  WHERE UNIT = "C")
+  
+create or replace temp view celsius_temp
+AS (SELECT *
+  FROM weather_managed
+  WHERE UNIT = "C")
+
+create or replace global temp view celsius_global
+AS (SELECT *
+  FROM weather_managed
+  WHERE UNIT = "C")
+  
+SHOW TABLES
+
+SELECT * FROM global_temp.celsius_global
+
+
+
