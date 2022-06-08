@@ -1,0 +1,13 @@
+********Extract Raw Events From JSON Files***********
+create table if not exists events_json
+(key BINARY,offset LONG, partition INTEGER, timestamp LONG, topic STRING, value BINARY)
+using json
+options(path = "${da.paths.datasets}/raw/events-kafka")
+
+***********Insert Raw Events Into Delta Table***********
+insert into events_raw
+select * from events_json
+
+***********Create Delta Table from a Query***********
+create or replace table item_lookup
+as select * from parquet.`${da.paths.datasets}/raw/item-lookup`
