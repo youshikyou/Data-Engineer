@@ -10,7 +10,7 @@ customers_checkpoint_path = f"{DA.paths.checkpoints}/customers"
   .readStream
   .format("cloudFiles")
   .option("cloudFiles.format","csv")
-  .option("cloudFiles.schedulelocation",customers_checkpoint_path)
+  .option("cloudFiles.schemalocation",customers_checkpoint_path)
   .load("/databricks-datasets/retail-org/customers/")
   .createOrReplaceTempView("customers_raw_temp"))
   
