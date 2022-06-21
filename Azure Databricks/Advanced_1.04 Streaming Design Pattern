@@ -1,0 +1,111 @@
+************** defines an incremental read on the table just created using Structured Streaming, 
+adds a field to capture when the record was processed, and writes out to a new table as a single batch.
+**************
+
+spark.readStream.table("bronze").withColumn("processed_time", F.current_timestamp())
+     .writeStream.option("checkpointLocation", silverCheckpoint).trigger(once=True).table("silver")
+     
+     
+************** Writing to Multiple Tables
+foreachBatch method provides the option to execute custom data writing logic on each microbatch of streaming data
+
+def write_twice(microBatchDF, batchId):
+    appId = 'write_twice'
+    
+    microBatchDF.select("id", "name", F.current_timestamp().alias("processed_time")).write.option("txnVersion", batchId).option("txnAppId", appId).mode("append").saveAsTable("silver_name")
+    
+    microBatchDF.select("id", "value", F.current_timestamp().alias("processed_time")).write.option("txnVersion", batchId).option("txnAppId", appId).mode("append").saveAsTable("silver_value")
+
+
+def split_stream():
+    (spark.readStream.table("bronze")
+        .writeStream
+        .foreachBatch(write_twice)
+        .outputMode("update")
+        .option("checkpointLocation", splitStreamCheckpoint)
+        .trigger(once=True)
+        .start())
+        
+************** Processing Change Data Capture Data
+While the change data capture (CDC) data emitted by various systems will vary greatly, incrementally processing these data with Databricks is straightforward.
+The MERGE statement can easily be written with SQL to apply CDC changes appropriately, given the type of update received.
+The rest of the upsert_cdc method contains the logic necessary to run SQL code against a micro-batch in a PySpark DataStreamWriter.
+**************
+
+def upsert_cdc(microBatchDF, batchID):
+    microBatchDF.createTempView("bronze_batch")
+    
+    query = """
+        MERGE INTO silver_status s
+        USING bronze_batch b
+        ON b.user_id = s.user_id
+        WHEN MATCHED AND b.update_type = "update"
+          THEN UPDATE SET user_id=b.user_id, status=b.status, updated_timestamp=b.processed_timestamp
+        WHEN MATCHED AND b.update_type = "delete"
+          THEN DELETE
+        WHEN NOT MATCHED AND b.update_type = "update" OR b.update_type = "insert"
+          THEN INSERT (user_id, status, updated_timestamp)
+          VALUES (b.user_id, b.status, b.processed_timestamp)
+    """
+    
+    microBatchDF._jdf.sparkSession().sql(query)
+    
+def streaming_merge():
+    spark.readStream.table("bronze_status").writeStream.foreachBatch(upsert_cdc)
+    .option("checkpointLocation", silverStatusCheckpoint).outputMode("update").trigger(once=True).start()
+    
+    
+    
+ ************** Joining Two Incremental Tables
+ def stream_stream_join():
+    nameDF = spark.readStream.table("silver_name")
+    valueDF = spark.readStream.table("silver_value")
+    
+    (nameDF.join(valueDF, nameDF.id == valueDF.id, "inner")
+        .select(nameDF.id, 
+                nameDF.name, 
+                valueDF.value, 
+                F.current_timestamp().alias("joined_timestamp"))
+        .writeStream
+        .option("checkpointLocation", joinedCheckpoint)
+        .table("joined_streams"))
+        
+************** Join Incremental and Static Data
+While incremental tables are ever-appending, static tables typically can be thought of as containing data that may be changed or overwritten.
+Because of Delta Lake's transactional guarantees and caching, 
+Databricks ensures that each microbatch of streaming data that's joined back to a static table will contain the current version of data from the static table.
+
+statusDF = spark.read.table("silver_status")
+bronzeDF = spark.readStream.table("bronze")
+bronzeDF.alias("bronze").join(statusDF.alias("status"), bronzeDF.id==statusDF.user_id, "inner")
+.select("bronze.*", "status.status").writeStream.option("checkpointLocation", joinStatusCheckpoint).table("joined_status")
+
+**************Only those records with a matching id in joined_status at the time the stream is processed will be represented in the resulting table.
+**************Processing new records into the silver_status table will not automatically trigger updates to the results of the stream-static join.
+No update
+%sql
+INSERT INTO bronze_status
+VALUES  (11, "repeat", "update", current_timestamp()),
+        (12, "at risk", "update", current_timestamp()),
+        (16, "new", "insert", current_timestamp()),
+        (17, "repeat", "update", current_timestamp())
+
+**************Only new data appearing on the streaming side of the query will trigger records to process using this pattern.
+Update
+%sql
+INSERT INTO bronze
+VALUES (16, "Marissa", 1.9),
+  (17, "Anne", 2.7)
+
+
+
+
+
+
+
+
+
+
+
+
+
