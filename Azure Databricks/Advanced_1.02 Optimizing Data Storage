@@ -1,0 +1,49 @@
+*****************Review transaction log************
+dbutils.fs.ls(f"{userhome}/no_part_table/_delta_log")
+display(spark.read.json(f"{userhome}/no_part_table/_delta_log/00000000000000000000.json"))
+
+
+*****************Partitioning Delta Lake Tables************
+spark.sql(f"""
+    CREATE OR REPLACE TABLE date_part_table (
+      key STRING,
+      value BINARY,
+      topic STRING,
+      partition LONG,
+      offset LONG,
+      timestamp LONG,
+      p_date DATE GENERATED ALWAYS AS (CAST(CAST(timestamp/1000 AS timestamp) AS DATE))
+    )
+    PARTITIONED BY (p_date)
+    LOCATION '{userhome}/date_part_table'
+""")
+
+spark.table("raw_data").write.mode("append").saveAsTable("date_part_table")
+
+
+********************Computing Stats******************
+%sql
+ANALYZE TABLE no_part_table COMPUTE STATISTICS FOR COLUMNS timestamp
+
+#to see the specific column statistics
+DESCRIBE EXTENDED no_part_table timestamp
+
+********************Z-Order Indexing********************
+%sql
+OPTIMIZE date_part_table
+ZORDER BY (timestamp)
+
+%sql
+DESCRIBE HISTORY date_part_table
+
+
+********************Bloom filter indexes********************
+%sql
+create bloomfilter index
+on table date_part_table
+for columns(key options(fpp = 0.1,numItems=200))
+
+
+
+
+
