@@ -1,0 +1,28 @@
+*******************Creating a Database with Options**********************
+
+%sql
+CREATE DATABASE ${c.database}
+COMMENT "This is a test database"
+LOCATION "${c.userhome}"
+WITH DBPROPERTIES (contains_pii = true)
+
+*******************Database Information**********************
+%sql
+DESCRIBE DATABASE EXTENDED ${c.database}
+
+*******************Creating a Table with Options**********************
+%sql
+CREATE TABLE ${c.database}.pii_test_2
+(id INT, name STRING COMMENT "PII")
+COMMENT "Contains PII"
+LOCATION "${c.userhome}/pii_test_2"
+TBLPROPERTIES ('contains_pii' = True) 
+
+*******************Using Table Metadata*******************
+def parse_table_keys(database):
+    table_keys = {}
+    for table in spark.sql(f"SHOW TABLES IN {database}").collect():
+        table_name = table[1]
+        key_values = spark.sql(f"DESCRIBE EXTENDED {database}.{table_name}").filter("col_name = 'Table Properties'").collect()[0][1][1:-1].split(",")
+        table_keys[table_name] = [kv for kv in key_values if not kv.startswith("delta.")]
+    return table_keys
