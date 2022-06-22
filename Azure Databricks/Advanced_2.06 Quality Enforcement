@@ -56,3 +56,30 @@ We write a microbatch of records with negative heartrates to the bpm_quarantine 
 If our job fails after our first transaction completes but before the second completes, we will re-execute the full microbatch logic on job restart.
 However, because our insert-only merge already prevents duplicate records from being saved to our table, this will not result in any data corruption.
 
+query = """
+  MERGE INTO heart_rate_silver a
+  USING stream_updates b
+  ON a.device_id=b.device_id AND a.time=b.time
+  WHEN NOT MATCHED THEN INSERT *
+"""
+streamingMerge=Upsert(query)
+
+(dedupedDF.writeStream
+   .foreachBatch(streamingMerge.upsertToDelta)
+   .outputMode("update")
+   .option("checkpointLocation", Paths.silverRecordingsCheckpoint)
+   .trigger(once=True)
+   .start()
+   .awaitTermination(300))
+
+
+********* flagging
+display(spark.read
+  .table("bronze")
+  .filter("topic = 'bpm'")
+  .select(F.from_json(F.col("value").cast("string"), "device_id LONG, time TIMESTAMP, heartrate DOUBLE").alias("v"))
+  .select("v.*", F.when(F.col("v.heartrate") <= 0, "Negative BPM").otherwise("OK").alias("bpm_check"))
+  .dropDuplicates(["device_id", "time"])
+)
+
+
