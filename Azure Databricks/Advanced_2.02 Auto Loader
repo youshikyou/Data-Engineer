@@ -1,4 +1,9 @@
 *********** Using CloudFiles
+
+files = dbutils.fs.ls(gym_mac_logs)
+
+schema = spark.read.json(files[0].path).schema
+
 def load_gym_logs():
     (spark.readStream.format("cloudFiles")
         .option("cloudFiles.format", "json")
