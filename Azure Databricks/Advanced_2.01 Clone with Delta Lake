@@ -1,0 +1,3 @@
+*************** Explore the table description to discover the schema and additional details.
+%sql
+DESCRIBE FORMATTED sensors_prod
