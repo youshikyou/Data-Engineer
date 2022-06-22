@@ -1,0 +1,29 @@
+********** Identify Duplicate Records
+Because Kafka provides at-least-once guarantees on data delivery, all Kafka consumers should be prepared to handle duplicate records.
+The de-duplication methods shown here can also be applied when necessary in other parts of your Delta Lake applications.
+
+(spark.read
+  .table("bronze")
+  .filter("topic = 'bpm'")
+  .count()
+)
+
+(spark.read
+  .table("bronze")
+  .filter("topic = 'bpm'")
+  .select(F.from_json(F.col("value").cast("string"), "device_id LONG, time TIMESTAMP, heartrate DOUBLE").alias("v"))
+  .select("v.*")
+  .dropDuplicates(["device_id", "time"])
+  .count()
+)
+
+
+********** Deduplicate done in silver not bronze
+dedupedDF = bpmDF = (spark.readStream
+  .table("bronze")
+  .filter("topic = 'bpm'")
+  .select(F.from_json(F.col("value").cast("string"), "device_id LONG, time TIMESTAMP, heartrate DOUBLE").alias("v"))
+  .select("v.*")
+  .withWatermark("time", "30 seconds")
+  .dropDuplicates(["device_id", "time"])
+)
