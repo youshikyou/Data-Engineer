@@ -1,0 +1,34 @@
+********** Examine schema **********
+spark.read.json(path).printSchema()
+
+
+********** Working with the JSON data stored in the Paths.sourceDaily location,
+transform the timestamp column as necessary to match to join it with the date column.
+**********
+
+jsonDF = spark.read.json(Paths.sourceDaily)
+joinedDF = (jsonDF.join(F.broadcast(dateLookup),
+    F.to_date((F.col("timestamp")/1000).cast("timestamp")) == F.col("date"),
+    "left"))
+    
+********** Define Triggered Incremental Auto Loading to Multiplex Bronze Table   
+a function to incrementally process data from the source directory to the bronze table, creating the table during the initial write    
+**********
+import pyspark.sql.functions as F
+
+def process_bronze():
+schema = "key BINARY, value BINARY, topic STRING, partition LONG, offset LONG, timestamp LONG"
+
+(spark.readStream
+    .format("cloudFiles")
+    .schema(schema)
+    .option("cloudFiles.format", "json")
+    .load(Paths.sourceDaily)
+    .join(F.broadcast(dateLookup), F.to_date((F.col("timestamp")/1000).cast("timestamp")) == F.col("date"), "left")
+    .writeStream
+    .option("checkpointLocation", Paths.bronzeCheckpoint)
+    .partitionBy("topic", "week_part")
+    .option("path", Paths.bronzeTable)
+    .trigger(once=True)
+    .table("bronze")
+    .awaitTermination())
