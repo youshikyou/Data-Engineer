@@ -1,0 +1,13 @@
+*********** Using CloudFiles
+def load_gym_logs():
+    (spark.readStream.format("cloudFiles")
+        .option("cloudFiles.format", "json")
+        .schema(schema)
+        .load(gym_mac_logs)
+        .writeStream
+        .format("delta")
+        .option("checkpointLocation", Paths.gymMacLogsCheckpoint)
+        .trigger(once=True)
+        .option("path", Paths.gymMacLogs)
+        .table("gym_mac_logs")
+        .awaitTermination())
