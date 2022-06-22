@@ -1,3 +1,31 @@
 *************** Explore the table description to discover the schema and additional details.
 %sql
 DESCRIBE FORMATTED sensors_prod
+
+
+*************** Create a backup of your dataset with deep clone
+*************** Deep clone will copy all data and metadata files from your source table to a specified location, registering it with the declared table name.
+%sql
+CREATE OR REPLACE TABLE sensors_backup 
+DEEP CLONE sensors_prod
+LOCATION '${c.userhome}/backup/sensors'
+
+*************** One of the useful features of deep cloning is the ability to set different table properties for file and log retention. 
+*************** This allows production tables to have optimized performance while maintaining files for auditing and regulatory compliance.
+%sql
+ALTER TABLE sensors_backup
+SET TBLPROPERTIES (
+  delta.logRetentionDuration = '3650 days',
+  delta.deletedFileRetentionDuration = '3650 days'
+)
+
+
+*************** Creating Development Datasets with Shallow Clone
+*************** Whereas deep clone copies both data and metadata, shallow clone just copies the metadata and creates a pointer to the existing data files.
+*************** Note that the cloned table will have read-only permissions on the source data files. 
+*************** This makes it easy to create development datasets using a production dataset without fear of table corruption.
+*************** Here, we'll also specify using version 2 of our source production table.
+%sql
+CREATE OR REPLACE TABLE sensors_dev
+SHALLOW CLONE sensors_prod@v2
+LOCATION '${c.userhome}/dev/sensors'
