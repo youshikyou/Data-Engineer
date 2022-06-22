@@ -1,0 +1,38 @@
+************** Convert Logic for Streaming Read
+
+(spark.readStream
+  .table("bronze")
+  .createOrReplaceTempView("TEMP_bronze")
+)
+
+%sql
+SELECT
+ v.*
+FROM
+ (
+   SELECT
+     from_json(
+       cast(value AS STRING),
+       "device_id LONG, time TIMESTAMP, heartrate DOUBLE"
+     ) v
+   FROM
+     TEMP_bronze
+   WHERE
+     topic = "bpm"
+ )
+ 
+ *******************  this logic refactored to Python
+ bpmDF = (spark.readStream
+  .table("bronze")
+  .filter("topic = 'bpm'")
+  .select(F.from_json(F.col("value").cast("string"), "device_id LONG, time TIMESTAMP, heartrate DOUBLE").alias("v"))
+  .select("v.*")
+)
+
+******************** To persist results to disk, a streaming write will need to be performed
+(bpmDF.writeStream
+    .option("checkpointLocation", Paths.silverRecordingsCheckpoint)
+    .option("path", Paths.silverRecordingsTable)
+    .trigger(once=True)
+    .table("heart_rate_silver"))
+    
