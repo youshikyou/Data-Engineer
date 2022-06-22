@@ -1,0 +1,58 @@
+********* Add constraint ********
+When defining a constraint, be sure to give it a human-readable name. (Note that names are not case sensitive.)
+
+%sql
+ALTER TABLE heart_rate_silver ADD CONSTRAINT date_within_range CHECK (time > '2017-01-01');
+
+********* Drop a constraint ********
+%sql
+ALTER TABLE heart_rate_silver DROP CONSTRAINT validbpm;
+
+********* Quarantining
+If the conditions of the constraint aren't met,Delta Lake will prevent us from applying a constraint that existing records violate.
+How do we deal with this?
+We could manually delete offending records and then set the check constraint, or set the check constraint before processing data from our bronze table.
+However, if we set a check constraint and a batch of data contains records that violate it, the job will fail and we'll throw an error. 
+If our goal is to identify bad records but keep streaming jobs running, we'll need a different solution.
+One idea would be to quarantine invalid records.
+*********
+
+********* Start by creating a table with the correct schema.
+
+spark.sql("DROP TABLE IF EXISTS bpm_quarantine")
+spark.sql(f"""
+CREATE TABLE IF NOT EXISTS bpm_quarantine
+(device_id LONG, time TIMESTAMP, heartrate DOUBLE)
+USING DELTA
+LOCATION '{Paths.silverPath}/bpm_quarantine'
+""")
+
+********* With Structured Streaming operations, writing to an additional table can be accomplished within foreachBatch logic.
+Below, we'll update the logic to add filters at the appropriate locations.
+For simplicity, we won't check for duplicate records as we insert data into the quarantine table.
+
+query = """
+MERGE INTO heart_rate_silver a
+USING stream_updates b
+ON a.device_id=b.device_id AND a.time=b.time
+WHEN NOT MATCHED THEN INSERT *
+"""
+
+class Upsert:
+    def __init__(self, query, update_temp="stream_updates"):
+        self.query = query
+        self.update_temp = update_temp 
+        
+    def upsertToDelta(self, microBatchDF, batch):
+        microBatchDF.filter("heartrate" > 0).createOrReplaceTempView(self.update_temp)
+        microBatchDF._jdf.sparkSession().sql(self.query)
+        microBatchDF.filter("heartrate" <= 0).write.format("delta").mode("append").saveAsTable("bpm_quarantine")
+        
+Note that within the foreachBatch logic, the DataFrame operations are treating the data in each batch as if it's static rather than streaming. 
+As such, we use the write syntax instead of writeStream.
+This also means that our exactly-once guarantees are relaxed. In our example above, we have two ACID transactions:
+Our SQL query executes to run an insert-only merge to avoid writing duplicate records to our silver table.
+We write a microbatch of records with negative heartrates to the bpm_quarantine table
+If our job fails after our first transaction completes but before the second completes, we will re-execute the full microbatch logic on job restart.
+However, because our insert-only merge already prevents duplicate records from being saved to our table, this will not result in any data corruption.
+
