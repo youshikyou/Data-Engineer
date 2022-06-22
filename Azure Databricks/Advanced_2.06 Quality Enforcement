@@ -56,6 +56,7 @@ We write a microbatch of records with negative heartrates to the bpm_quarantine 
 If our job fails after our first transaction completes but before the second completes, we will re-execute the full microbatch logic on job restart.
 However, because our insert-only merge already prevents duplicate records from being saved to our table, this will not result in any data corruption.
 
+************ spark sql API ************
 query = """
   MERGE INTO heart_rate_silver a
   USING stream_updates b
@@ -72,8 +73,28 @@ streamingMerge=Upsert(query)
    .start()
    .awaitTermination(300))
 
+************ deltaTable syntax ************
+from delta.tables import *
 
-********* flagging
+deltaTable = DeltaTable.forName(spark, "heart_rate_silver")
+
+def upsertToDelta(microBatchDF, batch):
+    (deltaTable.alias("a").merge(
+        microBatchDF.alias("b"),
+        "a.device_id=b.device_id")
+        .whenNotMatchedInsertAll()
+        .execute())
+        
+(dedupedDF.writeStream
+   .foreachBatch(upsertToDelta)
+   .outputMode("update")
+   .option("checkpointLocation", Paths.silverRecordingsCheckpoint)
+   .trigger(once=True)
+   .start()
+   .awaitTermination(300))
+
+
+********* flagging ************
 display(spark.read
   .table("bronze")
   .filter("topic = 'bpm'")
