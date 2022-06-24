@@ -1,0 +1,23 @@
+schema = """
+    user_id LONG, 
+    update_type STRING, 
+    timestamp FLOAT, 
+    dob STRING, 
+    sex STRING, 
+    gender STRING, 
+    first_name STRING, 
+    last_name STRING, 
+    address STRUCT<
+        street_address: STRING, 
+        city: STRING, 
+        state: STRING, 
+        zip: INT
+    >"""
+
+usersDF = (spark.table("bronze")
+    .filter("topic = 'user_info'")
+    .select(F.from_json(F.col("value").cast("string"), schema).alias("v")).select("v.*")
+    .filter(F.col("update_type").isin(["new", "update"]))
+          )
+
+display(usersDF)
