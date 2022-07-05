@@ -1,1 +1,3 @@
-collect_set
+collect_set()
+
+monotonically_increasing_id()
