@@ -1,0 +1,3 @@
+df.cache()
+df.unpersist()
+df.is_cache()
