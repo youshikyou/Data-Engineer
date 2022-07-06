@@ -3,3 +3,5 @@ collect_set()
 monotonically_increasing_id()
 
 df.printSchema()
+
+df.withColumnRenamed()
