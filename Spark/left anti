@@ -1,0 +1,2 @@
+# Create a DataFrame containing the invalid rows
+invalid_df = df.join(F.broadcast(joined_df), 'keyname', 'left_anti')
