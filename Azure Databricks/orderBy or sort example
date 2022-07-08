@@ -1,0 +1,2 @@
+df.orderBy(col('col1').desc()).limit(3)
+df.sort(col('col1').desc()).limit(3)
