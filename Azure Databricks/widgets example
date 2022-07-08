@@ -1,0 +1,23 @@
+dbutils.widgets.help()
+
+%sql
+CREATE WIDGET TEXT state DEFAULT "CA"
+
+%sql
+SELECT *
+FROM events
+WHERE geo.state = getArgument("state")
+
+%sql
+REMOVE WIDGET state
+
+
+**********python*****************
+dbutils.widgets.text("name", "Brickster", "Name")
+
+dbutils.widgets.multiselect("colors", "orange", ["red", "orange", "black", "blue"], "Traffic Sources")
+
+name = dbutils.widgets.get("name")
+colors = dbutils.widgets.get("colors").split(",")
+
+dbutils.widgets.removeAll()
