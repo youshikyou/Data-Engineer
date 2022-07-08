@@ -1,0 +1,6 @@
+#filter and where are exchangeble
+df.filter(col("colname").isNotNull)
+
+df.where("colname is not null")
+
+df.filter(df["colname"].isNotNull())
