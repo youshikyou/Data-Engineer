@@ -1,0 +1,5 @@
+df.select("colname").dropDuplicates() #fastest
+
+df.select("colname").distinct()
+
+df.dropDuplicates(["colname"]).select("colname")
