@@ -16,23 +16,3 @@ count(*) for event_name in
 CREATE OR REPLACE VIEW clickpaths AS
 select * from events_pivot e 
 join transactions t on e.user = t.user_id
-
-************** exists higher order function
-CREATE OR REPLACE TABLE sales_product_flags AS
-select
-items,
-EXISTS (items,i->i.item_name LIKE "%Mattress") as mattress,
-EXISTS (items,i->i.item_name LIKE "%Pillow") as pillow
-from sales
-
-************** transform higher order function
-CREATE OR REPLACE TEMP VIEW king_item_revenues AS
-SELECT
-  order_id,
-  king_items,
-  TRANSFORM (
-    king_items,
-    k -> CAST(k.item_revenue_in_usd * 100 AS INT)
-  ) AS item_revenues
-FROM king_size_sales;
-
