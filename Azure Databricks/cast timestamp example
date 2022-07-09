@@ -1,0 +1,3 @@
+df.withColumn("timestamp", (col("timestamp") / 1e6).cast("timestamp"))
+
+df.withColumn("timestamp", (col("timestamp") / 1e6).cast(TimestampType()))
