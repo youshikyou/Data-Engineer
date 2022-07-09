@@ -1,0 +1,2 @@
+df.withColumn("ts",(col("ts") / 1e6).cast(TimestampType()))
+              .withColumn("date", to_date("ts")
