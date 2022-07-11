@@ -1,0 +1,2 @@
+df.withColumn("items", explode(df['items']))
+           .groupBy(col("user_id")).agg(collect_set("items.item_id").alias("cart"))
