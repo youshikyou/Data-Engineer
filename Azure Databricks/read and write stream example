@@ -1,0 +1,16 @@
+df = (spark.readStream
+      .schema(schema)
+      .option("maxFilesPerTrigger", 1)
+      .parquet(salesPath)
+      
+couponSalesDF = (df.withColumn("items", explode(col("items")))
+                 .filter(col("items.coupon").isNotNull())  #read the dictionary 
+                 
+                 
+couponSalesQuery = (couponSalesDF.writeStream
+                    .outputMode("append")
+                    .format("parquet")
+                    .queryName("coupon_sales")
+                    .trigger(processingTime="1 second")
+                    .option("checkpointLocation", couponsCheckpointPath)
+                    .start(couponsOutputPath)
