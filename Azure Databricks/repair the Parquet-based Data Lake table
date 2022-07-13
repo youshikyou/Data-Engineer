@@ -1,0 +1,26 @@
+Per best practice, we have created a partitioned table. 
+However, if you create a partitioned table from existing data, Spark SQL does not automatically discover the partitions and register them in the Metastore.
+
+processedDF.write
+ .mode("overwrite")
+ .format("parquet")
+ .partitionBy("p_device_id")
+ .save(health_tracker + "processed")
+ 
+ 
+ %sql 
+DROP TABLE IF EXISTS health_tracker_processed;
+CREATE TABLE health_tracker_processed                        
+USING PARQUET                
+LOCATION "/dbacademy/$username/DLRS/healthtracker/processed"
+
+
+health_tracker_processed = spark.read.table("health_tracker_processed")
+health_tracker_processed.count() # the result is 0
+
+*************** Need to repair so that we can get the correct result *****************
+%sql
+MSCK REPAIR TABLE health_tracker_processed
+
+
+health_tracker_processed.count() # the correct result shows
