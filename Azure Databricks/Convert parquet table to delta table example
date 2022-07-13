@@ -1,0 +1,25 @@
+from delta.tables import DeltaTable
+
+health_tracker = '/dbacademy/zhiqiang/DLRS/healthtracker/'
+parquet_table = f"parquet.`{health_tracker}processed`"
+partitioning_scheme = "p_device_id int"
+
+DeltaTable.convertToDelta(spark, parquet_table, partitioning_scheme)
+
+
+************ To register the table ********
+At this point, the files containing our records have been converted to Delta files. The Metastore, however, has not been updated to reflect the change. 
+To change this we re-register the table in the Metastore. The Spark SQL command will automatically infer the data schema by reading the footers of the Delta files. 
+******************************************
+
+%sql
+DROP TABLE IF EXISTS health_tracker_processed;
+CREATE TABLE health_tracker_processed
+USING DELTA
+LOCATION "/dbacademy/${username}/DLRS/healthtracker/processed"
+
+********************
+With Delta Lake, the Delta table is immediately ready for use. 
+The transaction log stored with the Delta files contains all metadata needed for an immediate query.
+No need to repair the meta data 
+********************
