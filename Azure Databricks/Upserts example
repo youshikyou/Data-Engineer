@@ -1,0 +1,87 @@
+
+************* create update dataframe ********************
+
+from pyspark.sql.window import Window
+from pyspark.sql.functions import col, lag, lead
+#Create a DataFrame interpolating broken values
+dteWindow = Window.partitionBy("p_device_id").orderBy("dte")
+ 
+interpolatedDF = (
+  spark.read
+  .table("health_tracker_processed")
+  .select(col("dte"),
+          col("time"),
+          col("heartrate"),
+          lag(col("heartrate")).over(dteWindow).alias("prev_amt"),
+          lead(col("heartrate")).over(dteWindow).alias("next_amt"),
+          col("name"),
+          col("p_device_id")
+         )
+)
+
+updatesDF = (
+  interpolatedDF
+  .where(col("heartrate") < 0)
+  .select(col("dte"),
+          col("time"),
+          ((col("prev_amt") + col("next_amt"))/2).alias("heartrate"),
+          col("name"),
+          col("p_device_id"))
+)
+
+************* create insert dataframe ********************
+
+file_path = health_tracker + "raw/health_tracker_data_2020_2_late.json"
+ 
+health_tracker_data_2020_2_late_df = (
+  spark.read
+  .format("json")
+  .load(file_path)
+)
+
+
+def process_health_tracker_data(dataframe):
+  return (
+    dataframe
+    .withColumn("time", from_unixtime("time"))
+    .withColumn("time",col("time").cast("timestamp"))
+    .withColumn("dte", col("time").cast("date"))
+    .withColumnRenamed("device_id","p_device_id")
+    .withColumn("p_device_id", col("p_device_id").cast("integer"))
+    .select("dte", "time", "heartrate", "name", "p_device_id")
+  )
+
+
+insertsDF = process_health_tracker_data(health_tracker_data_2020_2_late_df)
+
+
+************* create upsert dataframe ********************
+
+upsertsDF = updatesDF.union(insertsDF)
+
+
+************* do upsert ********************
+from delta.tables import DeltaTable
+processedDeltaTable = DeltaTable.forPath(spark, health_tracker + "processed")
+
+update_match = """
+  health_tracker.time = upserts.time 
+  AND 
+  health_tracker.p_device_id = upserts.p_device_id
+"""
+
+update = { "heartrate" : "upserts.heartrate" }
+
+insert = {
+  "p_device_id" : "upserts.p_device_id",
+  "heartrate" : "upserts.heartrate",
+  "name" : "upserts.name",
+  "time" : "upserts.time",
+  "dte" : "upserts.dte"
+}
+
+(processedDeltaTable.alias("health_tracker")
+ .merge(upsertsDF.alias("upserts"), update_match)
+ .whenMatchedUpdate(set=update)
+ .whenNotMatchedInsert(values=insert)
+ .execute())
