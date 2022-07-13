@@ -1,3 +1,30 @@
 df.withColumn("timestamp", (col("timestamp") / 1e6).cast("timestamp"))
 
 df.withColumn("timestamp", (col("timestamp") / 1e6).cast(TimestampType()))
+
+
+
+"time" column is double type and its value is 1577836800
+df_1 = (df.
+        .withColumn("timestamp_1", (col("time") / 1e6).cast("timestamp")) # not OK, calculation is wrong,         1970-01-01T00:26:17.836+0000
+        #.withColumn("timestamp_1", (col("time") / 1e6).cast(TimestampType())) # not OK, calculation is wrong,    1970-01-01T00:26:17.836+0000
+        .withColumn("timestamp_2",from_unixtime("time")) # OK, but it is converted to string type,                2020-01-01 00:00:00
+        .withColumn("timestamp_3",col("time").cast("timestamp")) # OK directly from double type to timestamp type 2020-01-01T00:00:00.000+0000
+        .withColumn("timestamp_4",to_timestamp("time")) # OK                                                      2020-01-01T00:00:00.000+0000
+        .withColumn("timestamp_5", to_date("time")) # not OK, double type cannot convert to date                  null
+        .withColumn("timestamp_6", to_date("timestamp_2"))  # OK,  from timestamp type to date type               2020-01-01
+        .withColumn("timestamp_7", col("timestamp_2").cast("date")) # OK, from timestamp tpye to date type        2020-01-01
+)
+
+root
+ |-- device_id: long (nullable = true)
+ |-- heartrate: double (nullable = true)
+ |-- name: string (nullable = true)
+ |-- time: double (nullable = true)
+ |-- timestamp_1: timestamp (nullable = true)
+ |-- timestamp_2: string (nullable = true)
+ |-- timestamp_3: timestamp (nullable = true)
+ |-- timestamp_4: timestamp (nullable = true)
+ |-- timestamp_5: date (nullable = true)
+ |-- timestamp_6: date (nullable = true)
+ |-- timestamp_7: date (nullable = true)
