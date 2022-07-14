@@ -1,0 +1,7 @@
+Task:   A single unit of work against a single partition of data
+Job:    Consists of one or more stages
+Application: Consists of zero or more jobs
+Stage: Consists of one or more task
+
+
+Driver and executor are run inside of a Java Virtual Machine (JVM)
