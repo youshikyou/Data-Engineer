@@ -1,0 +1,12 @@
+print(type(df[["col"]]))
+<class 'pandas.core.frame.DataFrame'>
+
+print(type(df["col"]))
+<class 'pandas.core.series.Series'>
+
+print(type(df.col))
+<class 'pandas.core.series.Series'>
+
+
+df["col"][1] OK
+df[["col"]][1] Not OK
