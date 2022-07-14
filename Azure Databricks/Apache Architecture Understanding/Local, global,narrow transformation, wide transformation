@@ -1,0 +1,8 @@
+select, filter, map, cast 
+These transformations can be done in single executor without the whole dataset knowledge.
+This can be regarded as narrow transformation.
+
+
+sort, dropDuplicates,sum,count and so on
+These transformations that ultimately require knowledge of the entire dataset.
+This can be regarded as wide transformation.
