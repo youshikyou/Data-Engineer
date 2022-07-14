@@ -3,6 +3,6 @@ These transformations can be done in single executor without the whole dataset k
 This can be regarded as narrow transformation.
 
 
-sort, dropDuplicates,sum,count and so on
+sort, dropDuplicates, sum, count, distinct and so on
 These transformations that ultimately require knowledge of the entire dataset.
 This can be regarded as wide transformation.
