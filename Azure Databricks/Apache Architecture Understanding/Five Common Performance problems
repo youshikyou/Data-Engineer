@@ -1,0 +1,36 @@
+Skew: large skews can result in spill or worse.
+What can we do to mitigate the skew:
+1.Employ a databricks-specific skew hint
+2.Enable adaptive query execution in spark3
+3.Salt the skewed column with a random number creating better disctribution across each partition at the cost of extra processing.
+
+
+
+
+
+
+Spill
+
+
+
+Shuffle
+Storage
+Serialization
+
+************* Some notes **********
+It takes more time for the spark to read the schema for the first run than the second run even it is completely same code.
+
+
+
+why count is significantly different from foreach, much less time.
+Count operation is optimized. It actually scans single column and count the number of that column and return that.
+foreach operation is not optimized. It pulls every record into the spark executor and iterate every single one of those.
+
+
+why scala is faster than python in foreach function
+Because python's serialization of that lambda code costs the huge overhead.It is NOT python dataframe api slow.
+
+
+
+
+
