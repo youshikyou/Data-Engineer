@@ -1,26 +1,74 @@
-Skew: large skews can result in spill or worse.
+************************************************************
+Skew: Unevenly data distribution in partition. Large skews can result in spill or worse.
 What can we do to mitigate the skew:
 1.Employ a databricks-specific skew hint
-2.Enable adaptive query execution in spark3
+2.Enable adaptive query execution in spark3 (the most recommended)
 3.Salt the skewed column with a random number creating better disctribution across each partition at the cost of extra processing.
 
 
 
+************************************************************
+Spill: the act of moving an RDD from RAM to disk and later back into RAM again. This occurs when a given partition is simply too large to fit into RAM.
+The cause of this problem:
+1. Set spark.sql.files.maxPartitionBytes to high(default is 128 MB)
+2. The explode() of even a small array
+3. The join() or crossJoin() of two tables
+4. Aggregating results by a skewed feature
+
+SpillListener to identify spill in a job.
+
+What can we do to mitigate spill:
+Allocate a cluster with more memory per worker.
+In the case of skew, address that root cause first.
+Decrease the size of each partition by increasing the number of partitions.
+  * managing spark.sql.shuffle.partitions
+  * explicitly repartitioning
+  * managing spark.sql.files.maxPartitionBytes
+
+************************************************************
+
+Shuffle: a side effect of wide transformation: join(),distinct(), groupBy(),orderBy(). actions: like count()
+
+What can we do to mitigate shuffle:
+  Reduce network IO by using fewer and larger workers.
+  Reduce the amount of data being shuffled
+    * Narrow your columns
+    * Preemtively filter out unnecessary records
+    * ...more on optimiyaing data ingestion
+
+  Denormalize the datasets -- especially when the shuffle is rooted in a join
+
+  Broadcast the smaller table
+    * spark.sql.autoBroadcastJoinThreshold
+    * broadcast(tableName)
+    * Best suited for tables 10MB, but can be pushed higher
+  
+  For joins, pre-shuffle the data with a bucketed dataset
+  
+  Employ the Coast-Based Optimizer
+  
+  
+
+  
+
+ 
 
 
 
-Spill
 
 
 
-Shuffle
+
+
+
+************************************************************
 Storage
+
+************************************************************
 Serialization
 
 ************* Some notes **********
 It takes more time for the spark to read the schema for the first run than the second run even it is completely same code.
-
-
 
 why count is significantly different from foreach, much less time.
 Count operation is optimized. It actually scans single column and count the number of that column and return that.
