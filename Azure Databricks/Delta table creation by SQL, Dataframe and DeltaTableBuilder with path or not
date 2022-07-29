@@ -1,6 +1,14 @@
 Be careful about unmanaged table and manage table. 
-An unmanaged table will always specify the location.
+An unmanaged table will always specify the location.It doesn't link table with the data.
 https://docs.microsoft.com/en-us/azure/databricks/lakehouse/data-objects#managed-table
+
+
+You can create a delta table by SQL, dataframe API and deltatable builder.
+There are two different ways to create a delta table
+One is by path, the other one is by name.
+If you use path to create a delta table, you won't see a table in the hive database.
+But you can see the data by using path.
+
 
 ******************* SQL to create a delta table *****************
 CREATE OR REPLACE TABLE default.people10m (
@@ -47,6 +55,45 @@ df.write.format("delta").saveAsTable("default.people10m")
 # Create or replace partitioned table with path using DataFrame's schema and write/overwrite data to it
 df.write.format("delta").mode("overwrite").save("/tmp/delta/people10m")
 
+*****************************
+# example1,
+(
+    df_read
+    .write
+    .format("delta")
+    .mode("append")
+    .option("mergeSchema", "true")
+    .partitionBy("sourcefolderdate")
+    .save(path)
+)
+this creates a delta table data in the path,
+in the SQL space if you want to get the data, you need 
+select * from delta.`path`
+You don't have the table in the database!!!
+
+You need spark.read.format.load(path) to get the dataframe.
+*************************************
+
+************************************
+# example2,
+(
+    df_read
+    .write
+    .format("delta")
+    .mode("append")
+    .option("mergeSchema", "true")
+    .partitionBy("sourcefolderdate")
+    .saveAsTable("default.raw_data")
+)
+
+ this creates a delta table in the default database.
+ In the SQL space you need
+ select * from defualt.raw_data
+ 
+ You need spark.table("default.raw_data") to get the dataframe
+
+
+
 *************** DeltaTableBuilder API to create a delta table ***************
 # Create table in the metastore
 DeltaTable.createIfNotExists(spark) \
@@ -74,6 +121,18 @@ DeltaTable.createOrReplace(spark) \
   .property("description", "table with people data") \
   .location("/tmp/delta/people10m") \
   .execute()
+  
+# one lazy way to define the columns  
+tbl =  (
+        DeltaTable
+        .createIfNotExists(spark_session)
+        .addColumns(df_read.schema)
+        .partitionedBy("date")
+        .location(path)
+        )
+    if hive_tablename is not None:
+        tbl = tbl.tableName(hive_tablename)
+    tbl.execute()
 
 
 
