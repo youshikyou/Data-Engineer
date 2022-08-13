@@ -1,0 +1,20 @@
+
+
+df2 = df.withColumn("new_gender", when(col("gender") === "M","Male")
+      .when(col("gender") === "F","Female")
+      .otherwise("Unknown"))
+
+df3 = df.withColumn("new_gender", 
+      expr("case when gender = 'M' then 'Male' " +
+                       "when gender = 'F' then 'Female' " +
+                       "else 'Unknown' end"))
+
+
+df4 = df.select(col("*"), when(col("gender") === "M","Male")
+      .when(col("gender") === "F","Female")
+      .otherwise("Unknown").alias("new_gender"))
+      
+
+df5 = df.select(col("*"),
+      expr("case when gender = 'M' then 'Male' " +
+                       "when gender = 'F' then 'Female' else 'Unknown' end").alias("new_gender"))
