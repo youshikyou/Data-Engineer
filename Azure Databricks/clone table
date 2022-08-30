@@ -1,0 +1,12 @@
+%sql
+CREATE TABLE delta.`/some/test/location` SHALLOW CLONE prod.events
+
+Create or replace table test.events
+DEEP CLONE prod.events
+LOCATION 'test path'
+
+
+%python
+DeltaTable.forName(spark, "prod.events").clone("/some/test/location", isShallow=True)
+DeltaTable.forpath(spark, "prod.path").clone("/some/test/location", isShallow=True)
+DeltaTable.forpath(spark, "prod.path").clone("test.testtable", isShallow=True) # directly create the table
