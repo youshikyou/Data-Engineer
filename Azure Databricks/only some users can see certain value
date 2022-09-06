@@ -1,0 +1,12 @@
+CREATE VIEW sales_redacted AS
+SELECT
+  user_id,
+  country,
+  product,
+  total
+FROM sales_raw
+WHERE
+  CASE
+    WHEN is_member('managers') THEN TRUE
+    ELSE total <= 1000000
+  END;
